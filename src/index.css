@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+.input-admin {
+  @apply
+  w-full
+  bg-[#f3f5f9]
+  border
+  border-slate-200
+  rounded-2xl
+  px-5
+  py-4
+  outline-none
+  transition-all
+  duration-200
+  text-slate-700
+  placeholder:text-slate-400
+  focus:border-blue-600
+  focus:bg-white
+  focus:shadow-md;
+}
+
+.auth-input {
+  @apply w-full bg-[#f3f5f9] border border-slate-200 rounded-2xl px-5 py-4 outline-none transition-all duration-200 text-slate-700 placeholder:text-slate-400 focus:border-blue-600 focus:bg-white focus:shadow-md;
+} 
