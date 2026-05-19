@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react"
+import { useSearchParams } from "react-router-dom"
 import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
+
 import {
   FiEdit,
   FiTrash2,
   FiPlus,
   FiBox,
+  FiChevronRight,
 } from "react-icons/fi"
 
 import {
@@ -18,12 +21,34 @@ import {
 function Products() {
   const [activeTab, setActiveTab] = useState("stock")
   const [editingId, setEditingId] = useState(null)
+  const [searchParams] = useSearchParams()
 
+  // Filtro recibido desde Categorías: /productos?categoria=1
+  const categoriaFiltro = searchParams.get("categoria")
+
+  // Estados principales
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [subcategories, setSubcategories] = useState([])
   const [brands, setBrands] = useState([])
   const [loading, setLoading] = useState(false)
+  const [search, setSearch] = useState("")
+
+  // Ahora sí se calcula después de crear categories
+  const categoriaActual = categories.find(
+    (cat) => String(cat.Id) === String(categoriaFiltro)
+  )
+
+  const filteredProducts = products.filter((product) => {
+
+  const texto = `
+    ${product.Nombre}
+    ${product.Categoria}
+    ${product.Marca}
+  `.toLowerCase()
+
+  return texto.includes(search.toLowerCase())
+})
 
   const emptyForm = {
     nombre: "",
@@ -40,14 +65,20 @@ function Products() {
 
   const [form, setForm] = useState(emptyForm)
 
-  // Carga productos, categorías y marcas desde la API
+  // Carga productos, categorías y marcas desde SQL Server por medio de la API
   const loadInitialData = async () => {
     try {
       const productosDB = await getProducts()
       const categoriasDB = await getCategories()
       const marcasDB = await getBrands()
 
-      setProducts(productosDB)
+      const productosFiltrados = categoriaFiltro
+        ? productosDB.filter(
+            (p) => String(p.CategoriaId) === String(categoriaFiltro)
+          )
+        : productosDB
+
+      setProducts(productosFiltrados)
       setCategories(categoriasDB)
       setBrands(marcasDB)
     } catch (error) {
@@ -57,9 +88,9 @@ function Products() {
 
   useEffect(() => {
     loadInitialData()
-  }, [])
+  }, [categoriaFiltro])
 
-  // Carga subcategorías según la categoría seleccionada
+  // Carga subcategorías cuando se selecciona una categoría en el formulario
   useEffect(() => {
     const loadSubcategories = async () => {
       if (!form.categoriaId) {
@@ -74,6 +105,7 @@ function Products() {
     loadSubcategories()
   }, [form.categoriaId])
 
+  // Maneja cambios de inputs, selects y checkbox
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
 
@@ -84,7 +116,7 @@ function Products() {
     })
   }
 
-  // Guardar producto nuevo o actualizar producto existente
+  // Guarda producto nuevo o actualiza uno existente
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -92,7 +124,6 @@ function Products() {
       setLoading(true)
 
       const formData = new FormData()
-
       formData.append("nombre", form.nombre)
       formData.append("descripcion", form.descripcion)
       formData.append("precio", form.precio)
@@ -132,7 +163,6 @@ function Products() {
 
       setForm(emptyForm)
       setEditingId(null)
-
       await loadInitialData()
       setActiveTab("stock")
     } catch (error) {
@@ -143,7 +173,7 @@ function Products() {
     }
   }
 
-  // Carga los datos del producto seleccionado en el formulario
+  // Carga producto seleccionado para editarlo
   const editProduct = (product) => {
     setEditingId(product.Id)
 
@@ -171,10 +201,7 @@ function Products() {
 
   // Elimina producto desde SQL Server
   const deleteProduct = async (id) => {
-    const confirmar = window.confirm(
-      "¿Deseas eliminar este producto?"
-    )
-
+    const confirmar = window.confirm("¿Deseas eliminar este producto?")
     if (!confirmar) return
 
     try {
@@ -183,7 +210,6 @@ function Products() {
       })
 
       setProducts(products.filter((product) => product.Id !== id))
-
       alert("Producto eliminado correctamente")
     } catch (error) {
       console.error(error)
@@ -191,6 +217,7 @@ function Products() {
     }
   }
 
+  // Convierte ruta local de la API en URL completa
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) return "https://via.placeholder.com/80"
 
@@ -208,16 +235,44 @@ function Products() {
       <main className="flex-1 px-7 py-7">
         <Topbar />
 
+        {/* Breadcrumb cuando viene desde categorías */}
+        {categoriaFiltro && categoriaActual && (
+          <section className="flex items-center gap-3 text-slate-500 font-medium mt-6">
+            <span>Inicio</span>
+            <FiChevronRight />
+            <span>Categorías</span>
+            <FiChevronRight />
+            <span className="text-blue-600 font-bold">
+              {categoriaActual.Nombre}
+            </span>
+          </section>
+        )}
+
+        {/* Encabezado */}
         <section className="mt-10">
-          <h1 className="text-4xl font-bold text-slate-900">
-            Productos
+          <h1 className="text-4xl font-black text-slate-900">
+            {categoriaFiltro && categoriaActual
+              ? `Productos de ${categoriaActual.Nombre}`
+              : "Productos"}
           </h1>
 
           <p className="text-slate-500 mt-2">
             Administra el stock y agrega nuevos productos para la tienda.
           </p>
+
+          {categoriaFiltro && (
+            <button
+              onClick={() => {
+                window.location.href = "/productos"
+              }}
+              className="mt-5 bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold px-5 py-3 rounded-2xl transition"
+            >
+              Ver todos los productos
+            </button>
+          )}
         </section>
 
+        {/* Tabs */}
         <section className="bg-white rounded-2xl p-4 mt-8 shadow-sm border border-slate-100 flex gap-4 w-fit">
           <button
             onClick={() => {
@@ -250,6 +305,37 @@ function Products() {
           </button>
         </section>
 
+        {/* Buscador */}
+<section className="mt-8">
+
+  <input
+    type="text"
+    placeholder="Buscar producto, marca o categoría..."
+    value={search}
+    onChange={(e) =>
+      setSearch(e.target.value)
+    }
+    className="
+      w-full
+      bg-white
+      border
+      border-slate-200
+      rounded-2xl
+      px-6
+      py-4
+      text-slate-700
+      shadow-sm
+      focus:outline-none
+      focus:ring-4
+      focus:ring-blue-100
+      focus:border-blue-400
+      transition
+    "
+  />
+
+</section>
+
+        {/* Tabla de stock */}
         {activeTab === "stock" && (
           <section className="bg-white rounded-[30px] p-8 mt-8 shadow-sm border border-slate-100">
             <div className="flex items-center gap-4 mb-8">
@@ -261,7 +347,6 @@ function Products() {
                 <h2 className="text-3xl font-bold text-slate-900">
                   Stock Disponible
                 </h2>
-
                 <p className="text-slate-500 mt-1">
                   Visualiza y administra productos desde SQL Server.
                 </p>
@@ -284,7 +369,7 @@ function Products() {
                 </thead>
 
                 <tbody>
-                  {products.map((product) => (
+                  {filteredProducts.map((product) => (
                     <tr
                       key={product.Id}
                       className="border-b border-slate-100 hover:bg-slate-50 transition"
@@ -301,16 +386,12 @@ function Products() {
                         <p className="font-bold text-slate-900">
                           {product.Nombre}
                         </p>
-
                         <p className="text-sm text-slate-500">
                           {product.Descripcion}
                         </p>
                       </td>
 
-                      <td>
-                        <p>{product.Categoria}</p>
-                      </td>
-
+                      <td>{product.Categoria}</td>
                       <td>{product.Marca}</td>
 
                       <td className="font-bold text-blue-600">
@@ -362,6 +443,7 @@ function Products() {
           </section>
         )}
 
+        {/* Formulario de agregar / editar */}
         {activeTab === "add" && (
           <section className="bg-white rounded-[30px] p-10 mt-8 shadow-sm border border-slate-100">
             <div className="flex items-center justify-between mb-10">
@@ -378,9 +460,7 @@ function Products() {
 
                 <div>
                   <h2 className="text-3xl font-bold text-slate-900">
-                    {editingId
-                      ? "Editar Producto"
-                      : "Agregar Nuevo Producto"}
+                    {editingId ? "Editar Producto" : "Agregar Nuevo Producto"}
                   </h2>
 
                   <p className="text-slate-500 mt-1">
@@ -451,7 +531,6 @@ function Products() {
                   className="input-admin"
                 >
                   <option value="">Seleccionar categoría</option>
-
                   {categories.map((cat) => (
                     <option key={cat.Id} value={cat.Id}>
                       {cat.Nombre}
@@ -467,7 +546,6 @@ function Products() {
                   className="input-admin"
                 >
                   <option value="">Seleccionar subcategoría</option>
-
                   {subcategories.map((sub) => (
                     <option key={sub.Id} value={sub.Id}>
                       {sub.Nombre}
@@ -483,7 +561,6 @@ function Products() {
                   className="input-admin"
                 >
                   <option value="">Seleccionar marca</option>
-
                   {brands.map((brand) => (
                     <option key={brand.Id} value={brand.Id}>
                       {brand.Nombre}
@@ -523,7 +600,6 @@ function Products() {
                     onChange={handleChange}
                     className="w-5 h-5 accent-blue-600"
                   />
-
                   Producto activo
                 </label>
 
