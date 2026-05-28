@@ -1,68 +1,71 @@
 import {
-  AreaChart,
-  Area,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  CartesianGrid,
 } from "recharts"
 
-const data = [
-  { day: "1 May", ventas: 950 },
-  { day: "2 May", ventas: 1250 },
-  { day: "3 May", ventas: 800 },
-  { day: "4 May", ventas: 1150 },
-  { day: "5 May", ventas: 1400 },
-  { day: "6 May", ventas: 1300 },
-  { day: "7 May", ventas: 950 },
-  { day: "8 May", ventas: 600 },
-  { day: "9 May", ventas: 550 },
-]
+function SalesChart({ data = [] }) {
+  const chartData = data.map((item) => ({
+    fecha: new Date(item.Fecha).toLocaleDateString("es-GT", {
+      day: "2-digit",
+      month: "short",
+    }),
+    ventas: Number(item.TotalVentas || 0),
+    pedidos: Number(item.TotalPedidos || 0),
+  }))
 
-function SalesChart() {
   return (
-    <div className="bg-white rounded-2xl p-8 mt-6 shadow-sm border border-slate-100">
+    <section className="bg-white rounded-2xl p-8 mt-6 shadow-sm border border-slate-100">
       <div className="flex justify-between items-center mb-8">
-        <h2 className="text-2xl font-bold text-slate-950">Ventas</h2>
+        <h2 className="text-2xl font-bold">
+          Ventas diarias
+        </h2>
 
-        <select className="border border-slate-200 rounded-xl px-5 py-3 outline-none font-semibold">
+        <select className="border border-slate-200 rounded-xl px-4 py-3 outline-none font-semibold">
           <option>Diario</option>
-          <option>Semanal</option>
-          <option>Mensual</option>
         </select>
       </div>
 
-      <div className="h- [300px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data}>
-            <defs>
-              <linearGradient id="ventasColor" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#2563eb" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
-              </linearGradient>
-            </defs>
+      {chartData.length === 0 ? (
+        <div className="h-[300px] flex items-center justify-center text-slate-400">
+          No hay ventas registradas en este rango.
+        </div>
+      ) : (
+        <div className="h-[320px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
 
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="day" />
-            <YAxis
-              tickFormatter={(value) =>
-                value === 0 ? "Q0" : value >= 1000 ? `Q${value / 1000}k` : `Q${value}`
-              }
-            />
-            <Tooltip formatter={(value) => [`Q${value}`, "Ventas"]} />
-            <Area
-              type="monotone"
-              dataKey="ventas"
-              stroke="#0b63ff"
-              strokeWidth={3}
-              fill="url(#ventasColor)"
-              dot={{ r: 6, fill: "#0b63ff" }}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
+              <XAxis dataKey="fecha" />
+
+              <YAxis
+                tickFormatter={(value) => `Q${value}`}
+              />
+
+              <Tooltip
+                formatter={(value, name) => [
+                  name === "ventas" ? `Q${value}` : value,
+                  name === "ventas" ? "Ventas" : "Pedidos",
+                ]}
+              />
+
+              <Line
+                type="monotone"
+                dataKey="ventas"
+                stroke="#2563eb"
+                strokeWidth={4}
+                dot={{ r: 5 }}
+                activeDot={{ r: 7 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </section>
   )
 }
 

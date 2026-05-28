@@ -1,9 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700;800;900&display=swap');
+
 @import "tailwindcss";
 
-.input-admin {
+:root{
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --background: #f4f6ff;
+  --text-main: #071735;
+}
+
+*{
+  font-family: 'Nunito Sans', sans-serif;
+}
+
+body{
+  background: var(--background);
+  color: var(--text-main);
+}
+
+/* =========================
+   SCROLLBAR PREMIUM
+========================= */
+
+::-webkit-scrollbar{
+  width: 8px;
+}
+
+::-webkit-scrollbar-track{
+  background: #edf1ff;
+}
+
+::-webkit-scrollbar-thumb{
+  background: #c9d4ff;
+  border-radius: 20px;
+}
+
+::-webkit-scrollbar-thumb:hover{
+  background: #9fb5ff;
+}
+
+/* =========================
+   INPUTS ADMIN
+========================= */
+
+.input-admin{
   @apply
   w-full
-  bg-[#f3f5f9]
+  bg-[#f8faff]
   border
   border-slate-200
   rounded-2xl
@@ -12,13 +55,252 @@
   outline-none
   transition-all
   duration-200
+  text-sm
+  font-bold
   text-slate-700
   placeholder:text-slate-400
-  focus:border-blue-600
+  focus:border-blue-500
   focus:bg-white
-  focus:shadow-md;
+  focus:ring-4
+  focus:ring-blue-100;
 }
 
-.auth-input {
-  @apply w-full bg-[#f3f5f9] border border-slate-200 rounded-2xl px-5 py-4 outline-none transition-all duration-200 text-slate-700 placeholder:text-slate-400 focus:border-blue-600 focus:bg-white focus:shadow-md;
-} 
+/* =========================
+   INPUTS AUTH
+========================= */
+
+.auth-input{
+  @apply
+  w-full
+  bg-[#f8faff]
+  border
+  border-slate-200
+  rounded-2xl
+  px-5
+  py-4
+  outline-none
+  transition-all
+  duration-200
+  text-sm
+  font-bold
+  text-slate-700
+  placeholder:text-slate-400
+  focus:border-blue-500
+  focus:bg-white
+  focus:ring-4
+  focus:ring-blue-100;
+}
+
+/* =========================
+   BOTONES AZULES
+========================= */
+
+.btn-primary{
+  @apply
+  inline-flex
+  items-center
+  justify-center
+  gap-2
+  rounded-2xl
+  bg-blue-600
+  px-6
+  py-3
+  text-sm
+  font-extrabold
+  text-white
+  shadow-lg
+  shadow-blue-200
+  transition-all
+  duration-200
+  hover:bg-blue-700
+  hover:scale-[1.02]
+  active:scale-[0.98];
+}
+
+/* =========================
+   BOTON SECUNDARIO
+========================= */
+
+.btn-secondary{
+  @apply
+  inline-flex
+  items-center
+  justify-center
+  gap-2
+  rounded-2xl
+  bg-slate-100
+  px-6
+  py-3
+  text-sm
+  font-extrabold
+  text-slate-700
+  transition-all
+  duration-200
+  hover:bg-slate-200;
+}
+
+/* =========================
+   CARDS PREMIUM
+========================= */
+
+.card-premium{
+  @apply
+  rounded-[24px]
+  border
+  border-slate-100
+  bg-white
+  shadow-sm
+  transition-all
+  duration-200
+  hover:shadow-md;
+}
+
+/* =========================
+   TITULOS
+========================= */
+
+.title-main{
+  @apply
+  text-[42px]
+  leading-none
+  font-black
+  tracking-tight
+  text-[#071735];
+}
+
+.title-section{
+  @apply
+  text-3xl
+  font-black
+  tracking-tight
+  text-[#071735];
+}
+
+.title-card{
+  @apply
+  text-[22px]
+  leading-[1.1]
+  font-black
+  tracking-tight
+  text-[#071735];
+}
+
+/* =========================
+   SUBTEXTO
+========================= */
+
+.subtitle{
+  @apply
+  text-sm
+  font-semibold
+  text-slate-500;
+}
+
+/* =========================
+   BADGES
+========================= */
+
+.badge-blue{
+  @apply
+  inline-flex
+  items-center
+  gap-2
+  rounded-full
+  bg-blue-100
+  px-4
+  py-2
+  text-xs
+  font-extrabold
+  text-blue-600;
+}
+
+.badge-dark{
+  @apply
+  inline-flex
+  items-center
+  gap-2
+  rounded-full
+  bg-[#071735]
+  px-4
+  py-2
+  text-xs
+  font-extrabold
+  text-white;
+}
+
+/* =========================
+   SEARCHBAR NEXORA
+========================= */
+
+.searchbar{
+  @apply
+  flex
+  h-[62px]
+  items-center
+  overflow-hidden
+  rounded-2xl
+  border
+  border-slate-200
+  bg-white
+  shadow-sm;
+}
+
+.searchbar-input{
+  @apply
+  h-full
+  flex-1
+  bg-transparent
+  px-6
+  text-sm
+  font-bold
+  text-slate-700
+  outline-none
+  placeholder:text-slate-400;
+}
+
+.searchbar-button{
+  @apply
+  flex
+  h-full
+  items-center
+  justify-center
+  bg-blue-600
+  px-7
+  text-white
+  transition-all
+  duration-200
+  hover:bg-blue-700;
+}
+
+/* =========================
+   TABLAS
+========================= */
+
+.table-header{
+  @apply
+  border-b
+  border-slate-200
+  text-xs
+  font-extrabold
+  uppercase
+  tracking-[0.08em]
+  text-slate-500;
+}
+
+.table-row{
+  @apply
+  transition-all
+  duration-200
+  hover:bg-[#f8fbff];
+}
+
+/* =========================
+   MODALES
+========================= */
+
+.modal-premium{
+  @apply
+  rounded-[26px]
+  bg-white
+  shadow-2xl;
+}

@@ -25,7 +25,7 @@ function Brands() {
     brand.Nombre.toLowerCase().includes(search.toLowerCase())
   )
 
-  const totalProducts = brandnpms.reduce(
+  const totalProducts = brands.reduce(
     (acc, brand) => acc + Number(brand.TotalProductos || 0),
     0
   )

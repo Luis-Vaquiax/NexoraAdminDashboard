@@ -7,7 +7,7 @@ function Settings() {
       <Sidebar />
       <main className="flex-1 px-7 py-7">
         <Topbar />
-        <h1 className="text-4xl font-bold mt-8">Productos</h1>
+        <h1 className="text-4xl font-bold mt-8">Configuracion</h1>
         <p className="text-slate-600 mt-2">Aquí agregaremos, editaremos y eliminaremos productos.</p>
       </main>
     </div>
