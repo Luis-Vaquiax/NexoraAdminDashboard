@@ -2,635 +2,435 @@ import { useEffect, useState } from "react"
 import { useSearchParams } from "react-router-dom"
 import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
-
 import {
-  FiEdit,
-  FiTrash2,
-  FiPlus,
-  FiBox,
-  FiChevronRight,
+  FiEdit, FiTrash2, FiPlus, FiBox,
+  FiChevronRight, FiSearch, FiSave, FiX,
 } from "react-icons/fi"
-
 import {
-  getProducts,
-  getCategories,
-  getBrands,
-  getSubcategoriesByCategory,
+  getProducts, getCategories, getBrands, getSubcategoriesByCategory,
 } from "../services/productService"
 
+// ── Helpers ────────────────────────────────────────────────────────
+const getImageUrl = (url) => {
+  if (!url) return null
+  return url.startsWith("/uploads") ? `http://localhost:4000${url}` : url
+}
+
+// ── Sub-components ────────────────────────────────────────────────
+function StatusBadge({ active }) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold
+      ${active
+        ? "bg-green-50 text-green-800 border border-green-100"
+        : "bg-red-50 text-red-700 border border-red-100"}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${active ? "bg-green-500" : "bg-red-400"}`} />
+      {active ? "Activo" : "Inactivo"}
+    </span>
+  )
+}
+
+function ProductImage({ src, alt }) {
+  return src ? (
+    <img src={src} alt={alt}
+      className="w-11 h-11 rounded-xl object-cover bg-slate-100 flex-shrink-0" />
+  ) : (
+    <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+      <FiBox className="text-blue-400 text-lg" />
+    </div>
+  )
+}
+
+// ── Formulario ─────────────────────────────────────────────────────
+function ProductForm({ form, handleChange, setForm, categories, subcategories, brands, editingId, loading, onCancel }) {
+  return (
+    <section className="bg-white border border-slate-100 rounded-2xl p-6 mt-6 shadow-sm">
+      {/* Header del form */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center
+            ${editingId ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"}`}>
+            {editingId ? <FiEdit className="text-base" /> : <FiPlus className="text-base" />}
+          </div>
+          <div>
+            <p className="text-sm font-bold text-slate-900">
+              {editingId ? "Editar producto" : "Agregar nuevo producto"}
+            </p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {editingId ? "Modifica la información del producto." : "Completa la información del producto."}
+            </p>
+          </div>
+        </div>
+        {editingId && (
+          <button type="button" onClick={onCancel}
+            className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-600
+              bg-slate-100 rounded-xl hover:bg-slate-200 transition">
+            <FiX className="text-xs" /> Cancelar edición
+          </button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <input name="nombre" value={form.nombre} onChange={handleChange}
+          placeholder="Nombre del producto" required className="input-admin" />
+        <input name="precio" value={form.precio} onChange={handleChange}
+          placeholder="Precio Q" type="number" required className="input-admin" />
+        <input name="pesoEnLibras" value={form.pesoEnLibras} onChange={handleChange}
+          placeholder="Peso en libras" type="number" step="0.01" className="input-admin" />
+        <input name="stock" value={form.stock} onChange={handleChange}
+          placeholder="Stock disponible" type="number" required className="input-admin" />
+
+        <select name="categoriaId" value={form.categoriaId} onChange={handleChange}
+          required className="input-admin">
+          <option value="">Seleccionar categoría</option>
+          {categories.map((c) => <option key={c.Id} value={c.Id}>{c.Nombre}</option>)}
+        </select>
+
+        <select name="subcategoriaId" value={form.subcategoriaId} onChange={handleChange}
+          disabled={!form.categoriaId} className="input-admin">
+          <option value="">Seleccionar subcategoría</option>
+          {subcategories.map((s) => <option key={s.Id} value={s.Id}>{s.Nombre}</option>)}
+        </select>
+
+        <select name="marcaId" value={form.marcaId} onChange={handleChange}
+          required className="input-admin">
+          <option value="">Seleccionar marca</option>
+          {brands.map((b) => <option key={b.Id} value={b.Id}>{b.Nombre}</option>)}
+        </select>
+
+        <input type="file" name="imagen" accept="image/*"
+          onChange={(e) => setForm((f) => ({ ...f, imagen: e.target.files[0] }))}
+          className="input-admin" />
+
+        <textarea name="descripcion" value={form.descripcion} onChange={handleChange}
+          placeholder="Descripción del producto" required
+          className="input-admin col-span-full h-28 resize-none" />
+      </div>
+
+      <div className="flex items-center justify-between mt-5 pt-4 border-t border-slate-100">
+        <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
+          <input type="checkbox" name="activo" checked={form.activo}
+            onChange={handleChange} className="w-4 h-4 accent-blue-600 rounded" />
+          Producto activo
+        </label>
+
+        <button disabled={loading}
+          className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-xl
+            transition disabled:opacity-60
+            ${editingId ? "bg-amber-500 hover:bg-amber-600" : "bg-blue-600 hover:bg-blue-700"}`}>
+          <FiSave className="text-sm" />
+          {loading ? "Guardando..." : editingId ? "Guardar cambios" : "Guardar producto"}
+        </button>
+      </div>
+    </section>
+  )
+}
+
+// ── Tabla de stock ─────────────────────────────────────────────────
+function StockTable({ products, onEdit, onDelete, loading }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[820px] border-collapse text-left">
+        <thead>
+          <tr className="border-b border-slate-100">
+            {["Imagen", "Producto", "Categoría", "Marca", "Precio", "Stock", "Estado", ""].map((h, i) => (
+              <th key={i} className="px-3 pb-3 text-[11px] font-semibold text-slate-400
+                uppercase tracking-wider whitespace-nowrap">
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-50">
+          {products.map((p) => (
+            <tr key={p.Id} className="hover:bg-slate-50/60 transition-colors">
+              <td className="px-3 py-3.5">
+                <ProductImage src={getImageUrl(p.ImageUrl)} alt={p.Nombre} />
+              </td>
+              <td className="px-3 py-3.5">
+                <p className="text-sm font-semibold text-slate-900 leading-snug">{p.Nombre}</p>
+                <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{p.Descripcion}</p>
+              </td>
+              <td className="px-3 py-3.5 text-sm text-slate-500">{p.Categoria}</td>
+              <td className="px-3 py-3.5 text-sm text-slate-500">{p.Marca}</td>
+              <td className="px-3 py-3.5">
+                <span className="text-sm font-semibold text-blue-600">Q{p.Precio}</span>
+              </td>
+              <td className="px-3 py-3.5">
+                <span className={`text-sm font-semibold ${p.Stock <= 0 ? "text-red-500" : "text-slate-700"}`}>
+                  {p.Stock}
+                </span>
+              </td>
+              <td className="px-3 py-3.5"><StatusBadge active={p.Activo} /></td>
+              <td className="px-3 py-3.5">
+                <div className="flex gap-2">
+                  <button onClick={() => onEdit(p)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg
+                      bg-amber-50 text-amber-700 hover:bg-amber-100 transition"
+                    aria-label="Editar producto">
+                    <FiEdit className="text-sm" />
+                  </button>
+                  <button onClick={() => onDelete(p.Id)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg
+                      bg-red-50 text-red-600 hover:bg-red-100 transition"
+                    aria-label="Eliminar producto">
+                    <FiTrash2 className="text-sm" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {loading && (
+        <p className="text-center text-sm text-slate-400 py-10">Cargando productos...</p>
+      )}
+      {!loading && products.length === 0 && (
+        <div className="py-14 text-center">
+          <FiBox className="text-3xl text-slate-300 mx-auto mb-3" />
+          <p className="text-sm text-slate-400">No hay productos registrados todavía.</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Página principal ───────────────────────────────────────────────
+const FORM_DEFAULT = {
+  nombre: "", descripcion: "", precio: "", pesoEnLibras: "",
+  stock: "", imagen: null, categoriaId: "", subcategoriaId: "",
+  marcaId: "", activo: true,
+}
+
 function Products() {
-  const [activeTab, setActiveTab] = useState("stock")
-  const [editingId, setEditingId] = useState(null)
-  const [searchParams] = useSearchParams()
+  const [activeTab, setActiveTab]       = useState("stock")
+  const [editingId, setEditingId]       = useState(null)
+  const [searchParams]                  = useSearchParams()
+  const categoriaFiltro                 = searchParams.get("categoria")
 
-  // Filtro recibido desde Categorías: /productos?categoria=1
-  const categoriaFiltro = searchParams.get("categoria")
-
-  // Estados principales
-  const [products, setProducts] = useState([])
-  const [categories, setCategories] = useState([])
+  const [products, setProducts]         = useState([])
+  const [categories, setCategories]     = useState([])
   const [subcategories, setSubcategories] = useState([])
-  const [brands, setBrands] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [search, setSearch] = useState("")
+  const [brands, setBrands]             = useState([])
+  const [loading, setLoading]           = useState(false)
+  const [search, setSearch]             = useState("")
+  const [form, setForm]                 = useState(FORM_DEFAULT)
 
-  // Ahora sí se calcula después de crear categories
   const categoriaActual = categories.find(
-    (cat) => String(cat.Id) === String(categoriaFiltro)
+    (c) => String(c.Id) === String(categoriaFiltro)
   )
 
-  const filteredProducts = products.filter((product) => {
+  const filteredProducts = products.filter((p) =>
+    `${p.Nombre} ${p.Categoria} ${p.Marca}`.toLowerCase()
+      .includes(search.toLowerCase())
+  )
 
-  const texto = `
-    ${product.Nombre}
-    ${product.Categoria}
-    ${product.Marca}
-  `.toLowerCase()
-
-  return texto.includes(search.toLowerCase())
-})
-
-  const emptyForm = {
-    nombre: "",
-    descripcion: "",
-    precio: "",
-    pesoEnLibras: "",
-    stock: "",
-    imagen: null,
-    categoriaId: "",
-    subcategoriaId: "",
-    marcaId: "",
-    activo: true,
-  }
-
-  const [form, setForm] = useState(emptyForm)
-
-  // Carga productos, categorías y marcas desde SQL Server por medio de la API
   const loadInitialData = async () => {
     try {
-      const productosDB = await getProducts()
-      const categoriasDB = await getCategories()
-      const marcasDB = await getBrands()
-
-      const productosFiltrados = categoriaFiltro
-        ? productosDB.filter(
-            (p) => String(p.CategoriaId) === String(categoriaFiltro)
-          )
-        : productosDB
-
-      setProducts(productosFiltrados)
-      setCategories(categoriasDB)
-      setBrands(marcasDB)
-    } catch (error) {
-      console.error("Error cargando datos:", error)
-    }
-  }
-
-  useEffect(() => {
-    loadInitialData()
-  }, [categoriaFiltro])
-
-  // Carga subcategorías cuando se selecciona una categoría en el formulario
-  useEffect(() => {
-    const loadSubcategories = async () => {
-      if (!form.categoriaId) {
-        setSubcategories([])
-        return
-      }
-
-      const data = await getSubcategoriesByCategory(form.categoriaId)
-      setSubcategories(data)
-    }
-
-    loadSubcategories()
-  }, [form.categoriaId])
-
-  // Maneja cambios de inputs, selects y checkbox
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target
-
-    setForm({
-      ...form,
-      [name]: type === "checkbox" ? checked : value,
-      ...(name === "categoriaId" ? { subcategoriaId: "" } : {}),
-    })
-  }
-
-  // Guarda producto nuevo o actualiza uno existente
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-
-    try {
       setLoading(true)
-
-      const formData = new FormData()
-      formData.append("nombre", form.nombre)
-      formData.append("descripcion", form.descripcion)
-      formData.append("precio", form.precio)
-      formData.append("pesoEnLibras", form.pesoEnLibras)
-      formData.append("stock", form.stock)
-      formData.append("activo", form.activo)
-      formData.append("categoriaId", form.categoriaId)
-      formData.append("marcaId", form.marcaId)
-
-      if (form.imagen) {
-        formData.append("imagen", form.imagen)
-      }
-
-      const url = editingId
-        ? `http://localhost:4000/api/productos/${editingId}`
-        : "http://localhost:4000/api/productos"
-
-      const method = editingId ? "PUT" : "POST"
-
-      const response = await fetch(url, {
-        method,
-        body: formData,
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        alert(data.message || "Error al guardar producto")
-        return
-      }
-
-      alert(
-        editingId
-          ? "Producto actualizado correctamente"
-          : "Producto agregado correctamente"
+      const [prods, cats, mrcas] = await Promise.all([
+        getProducts(), getCategories(), getBrands(),
+      ])
+      setProducts(
+        categoriaFiltro
+          ? prods.filter((p) => String(p.CategoriaId) === String(categoriaFiltro))
+          : prods
       )
-
-      setForm(emptyForm)
-      setEditingId(null)
-      await loadInitialData()
-      setActiveTab("stock")
-    } catch (error) {
-      console.error(error)
-      alert("Error al guardar producto")
+      setCategories(cats)
+      setBrands(mrcas)
+    } catch (err) {
+      console.error(err)
     } finally {
       setLoading(false)
     }
   }
 
-  // Carga producto seleccionado para editarlo
-  const editProduct = (product) => {
-    setEditingId(product.Id)
+  useEffect(() => { loadInitialData() }, [categoriaFiltro])
 
+  useEffect(() => {
+    if (!form.categoriaId) { setSubcategories([]); return }
+    getSubcategoriesByCategory(form.categoriaId).then(setSubcategories)
+  }, [form.categoriaId])
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target
+    setForm((f) => ({
+      ...f,
+      [name]: type === "checkbox" ? checked : value,
+      ...(name === "categoriaId" ? { subcategoriaId: "" } : {}),
+    }))
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    try {
+      setLoading(true)
+      const fd = new FormData()
+      Object.entries(form).forEach(([k, v]) => {
+        if (k === "imagen" && v) fd.append("imagen", v)
+        else if (k !== "imagen") fd.append(k, v)
+      })
+      const url    = editingId ? `http://localhost:4000/api/productos/${editingId}` : "http://localhost:4000/api/productos"
+      const method = editingId ? "PUT" : "POST"
+      const res    = await fetch(url, { method, body: fd })
+      const data   = await res.json()
+      if (!res.ok) { alert(data.message || "Error al guardar"); return }
+      alert(editingId ? "Producto actualizado" : "Producto creado")
+      setForm(FORM_DEFAULT); setEditingId(null)
+      await loadInitialData(); setActiveTab("stock")
+    } catch { alert("Error al guardar producto") }
+    finally { setLoading(false) }
+  }
+
+  const editProduct = (p) => {
+    setEditingId(p.Id)
     setForm({
-      nombre: product.Nombre,
-      descripcion: product.Descripcion,
-      precio: product.Precio,
-      pesoEnLibras: product.PesoEnLibras,
-      stock: product.Stock,
-      imagen: null,
-      categoriaId: product.CategoriaId,
-      subcategoriaId: "",
-      marcaId: product.MarcaId,
-      activo: product.Activo,
+      nombre: p.Nombre, descripcion: p.Descripcion, precio: p.Precio,
+      pesoEnLibras: p.PesoEnLibras, stock: p.Stock, imagen: null,
+      categoriaId: p.CategoriaId, subcategoriaId: "", marcaId: p.MarcaId, activo: p.Activo,
     })
-
     setActiveTab("add")
   }
 
-  const cancelEdit = () => {
-    setEditingId(null)
-    setForm(emptyForm)
-    setActiveTab("stock")
-  }
+  const cancelEdit = () => { setEditingId(null); setForm(FORM_DEFAULT); setActiveTab("stock") }
 
-  // Elimina producto desde SQL Server
   const deleteProduct = async (id) => {
-    const confirmar = window.confirm("¿Deseas eliminar este producto?")
-    if (!confirmar) return
-
+    if (!window.confirm("¿Deseas eliminar este producto?")) return
     try {
-      await fetch(`http://localhost:4000/api/productos/${id}`, {
-        method: "DELETE",
-      })
-
-      setProducts(products.filter((product) => product.Id !== id))
-      alert("Producto eliminado correctamente")
-    } catch (error) {
-      console.error(error)
-      alert("Error eliminando producto")
-    }
+      await fetch(`http://localhost:4000/api/productos/${id}`, { method: "DELETE" })
+      setProducts((ps) => ps.filter((p) => p.Id !== id))
+    } catch { alert("Error eliminando producto") }
   }
 
-  // Convierte ruta local de la API en URL completa
-  const getImageUrl = (imageUrl) => {
-    if (!imageUrl) return "https://via.placeholder.com/80"
-
-    if (imageUrl.startsWith("/uploads")) {
-      return `http://localhost:4000${imageUrl}`
-    }
-
-    return imageUrl
+  const goToTab = (tab) => {
+    setActiveTab(tab)
+    if (tab === "stock") cancelEdit()
   }
 
   return (
-    <div className="flex bg-[#f8faff] min-h-screen">
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
       <Sidebar />
 
-      <main className="flex-1 px-7 py-7">
+      <main className="flex-1 overflow-y-auto px-8 py-7">
         <Topbar />
 
-        {/* Breadcrumb cuando viene desde categorías */}
+        {/* Breadcrumb */}
         {categoriaFiltro && categoriaActual && (
-          <section className="flex items-center gap-3 text-slate-500 font-medium mt-6">
+          <nav className="flex items-center gap-2 text-xs text-slate-400 font-medium mt-6">
             <span>Inicio</span>
-            <FiChevronRight />
+            <FiChevronRight className="text-xs" />
             <span>Categorías</span>
-            <FiChevronRight />
-            <span className="text-blue-600 font-bold">
-              {categoriaActual.Nombre}
-            </span>
-          </section>
+            <FiChevronRight className="text-xs" />
+            <span className="text-blue-600 font-semibold">{categoriaActual.Nombre}</span>
+          </nav>
         )}
 
         {/* Encabezado */}
-        <section className="mt-10">
-          <h1 className="text-4xl font-black text-slate-900">
-            {categoriaFiltro && categoriaActual
-              ? `Productos de ${categoriaActual.Nombre}`
-              : "Productos"}
-          </h1>
+        <section className="mt-8 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-5">
+          <div>
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700
+              bg-blue-50 border border-blue-100 rounded-full px-3 py-1">
+              <FiBox className="text-xs" />
+              {categoriaFiltro && categoriaActual
+                ? `Categoría: ${categoriaActual.Nombre}`
+                : "Gestión de productos"}
+            </span>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
+              {categoriaFiltro && categoriaActual
+                ? `Productos de ${categoriaActual.Nombre}`
+                : "Productos"}
+            </h1>
+            <p className="mt-1.5 text-sm text-slate-500">
+              Administra el stock y agrega nuevos productos para la tienda.
+            </p>
+            {categoriaFiltro && (
+              <button onClick={() => { window.location.href = "/productos" }}
+                className="mt-3 text-xs font-semibold text-blue-600 bg-blue-50 border
+                  border-blue-100 px-4 py-2 rounded-xl hover:bg-blue-100 transition">
+                ← Ver todos los productos
+              </button>
+            )}
+          </div>
 
-          <p className="text-slate-500 mt-2">
-            Administra el stock y agrega nuevos productos para la tienda.
-          </p>
-
-          {categoriaFiltro && (
-            <button
-              onClick={() => {
-                window.location.href = "/productos"
-              }}
-              className="mt-5 bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold px-5 py-3 rounded-2xl transition"
-            >
-              Ver todos los productos
-            </button>
-          )}
-        </section>
-
-        {/* Tabs */}
-        <section className="bg-white rounded-2xl p-4 mt-8 shadow-sm border border-slate-100 flex gap-4 w-fit">
-          <button
-            onClick={() => {
-              setActiveTab("stock")
-              setEditingId(null)
-              setForm(emptyForm)
-            }}
-            className={`px-6 py-3 rounded-xl font-semibold transition ${
-              activeTab === "stock"
-                ? "bg-blue-600 text-white"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            Stock Disponible
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveTab("add")
-              setEditingId(null)
-              setForm(emptyForm)
-            }}
-            className={`px-6 py-3 rounded-xl font-semibold transition ${
-              activeTab === "add"
-                ? "bg-blue-600 text-white"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            Agregar Nuevo Producto
-          </button>
-        </section>
-
-        {/* Buscador */}
-<section className="mt-8">
-
-  <input
-    type="text"
-    placeholder="Buscar producto, marca o categoría..."
-    value={search}
-    onChange={(e) =>
-      setSearch(e.target.value)
-    }
-    className="
-      w-full
-      bg-white
-      border
-      border-slate-200
-      rounded-2xl
-      px-6
-      py-4
-      text-slate-700
-      shadow-sm
-      focus:outline-none
-      focus:ring-4
-      focus:ring-blue-100
-      focus:border-blue-400
-      transition
-    "
-  />
-
-</section>
-
-        {/* Tabla de stock */}
-        {activeTab === "stock" && (
-          <section className="bg-white rounded-[30px] p-8 mt-8 shadow-sm border border-slate-100">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center text-2xl">
-                <FiBox />
-              </div>
-
-              <div>
-                <h2 className="text-3xl font-bold text-slate-900">
-                  Stock Disponible
-                </h2>
-                <p className="text-slate-500 mt-1">
-                  Visualiza y administra productos desde SQL Server.
-                </p>
-              </div>
+          {/* Tabs + Buscador */}
+          <div className="flex flex-col gap-3 w-full xl:w-auto xl:items-end">
+            <div className="flex gap-1 bg-white border border-slate-200 rounded-xl p-1 w-fit">
+              {[
+                { key: "stock", label: "Stock disponible" },
+                { key: "add",   label: editingId ? "Editando producto" : "Agregar producto" },
+              ].map(({ key, label }) => (
+                <button key={key} onClick={() => goToTab(key)}
+                  className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
+                    activeTab === key
+                      ? "bg-blue-600 text-white"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}>
+                  {label}
+                </button>
+              ))}
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-500">
-                    <th className="py-5">Imagen</th>
-                    <th>Producto</th>
-                    <th>Categoría</th>
-                    <th>Marca</th>
-                    <th>Precio</th>
-                    <th>Stock</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {filteredProducts.map((product) => (
-                    <tr
-                      key={product.Id}
-                      className="border-b border-slate-100 hover:bg-slate-50 transition"
-                    >
-                      <td className="py-5">
-                        <img
-                          src={getImageUrl(product.ImageUrl)}
-                          alt={product.Nombre}
-                          className="w-16 h-16 rounded-2xl object-cover bg-slate-100"
-                        />
-                      </td>
-
-                      <td>
-                        <p className="font-bold text-slate-900">
-                          {product.Nombre}
-                        </p>
-                        <p className="text-sm text-slate-500">
-                          {product.Descripcion}
-                        </p>
-                      </td>
-
-                      <td>{product.Categoria}</td>
-                      <td>{product.Marca}</td>
-
-                      <td className="font-bold text-blue-600">
-                        Q{product.Precio}
-                      </td>
-
-                      <td>{product.Stock}</td>
-
-                      <td>
-                        <span
-                          className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                            product.Activo
-                              ? "bg-green-100 text-green-600"
-                              : "bg-red-100 text-red-600"
-                          }`}
-                        >
-                          {product.Activo ? "Activo" : "Inactivo"}
-                        </span>
-                      </td>
-
-                      <td>
-                        <div className="flex gap-3">
-                          <button
-                            onClick={() => editProduct(product)}
-                            className="w-10 h-10 rounded-xl bg-yellow-100 text-yellow-600 flex items-center justify-center hover:scale-105 transition"
-                          >
-                            <FiEdit />
-                          </button>
-
-                          <button
-                            onClick={() => deleteProduct(product.Id)}
-                            className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center hover:scale-105 transition"
-                          >
-                            <FiTrash2 />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {products.length === 0 && (
-                <p className="text-center text-slate-500 py-10">
-                  No hay productos registrados todavía.
-                </p>
+            <div className="flex items-center gap-2 bg-white border border-slate-200
+              rounded-xl px-4 py-2.5 w-full xl:w-[340px] shadow-sm">
+              <FiSearch className="text-slate-400 flex-shrink-0 text-sm" />
+              <input type="text" placeholder="Buscar producto, marca o categoría..."
+                value={search} onChange={(e) => setSearch(e.target.value)}
+                className="flex-1 text-sm bg-transparent outline-none placeholder:text-slate-400" />
+              {search && (
+                <button onClick={() => setSearch("")} className="text-slate-400 hover:text-slate-600">
+                  <FiX className="text-xs" />
+                </button>
               )}
             </div>
-          </section>
-        )}
+          </div>
+        </section>
 
-        {/* Formulario de agregar / editar */}
-        {activeTab === "add" && (
-          <section className="bg-white rounded-[30px] p-10 mt-8 shadow-sm border border-slate-100">
-            <div className="flex items-center justify-between mb-10">
-              <div className="flex items-center gap-4">
-                <div
-                  className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl ${
-                    editingId
-                      ? "bg-yellow-100 text-yellow-600"
-                      : "bg-blue-100 text-blue-600"
-                  }`}
-                >
-                  {editingId ? <FiEdit /> : <FiPlus />}
+        {/* Tabla */}
+        {activeTab === "stock" && (
+          <section className="bg-white border border-slate-100 rounded-2xl p-6 mt-6 shadow-sm">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center">
+                  <FiBox className="text-blue-600 text-base" />
                 </div>
-
                 <div>
-                  <h2 className="text-3xl font-bold text-slate-900">
-                    {editingId ? "Editar Producto" : "Agregar Nuevo Producto"}
-                  </h2>
-
-                  <p className="text-slate-500 mt-1">
-                    {editingId
-                      ? "Modifica la información del producto seleccionado."
-                      : "Completa la información del producto."}
+                  <p className="text-sm font-bold text-slate-900">Stock disponible</p>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {filteredProducts.length} producto{filteredProducts.length !== 1 ? "s" : ""} encontrado{filteredProducts.length !== 1 ? "s" : ""}
                   </p>
                 </div>
               </div>
-
-              {editingId && (
-                <button
-                  type="button"
-                  onClick={cancelEdit}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-3 rounded-xl font-semibold transition"
-                >
-                  Cancelar edición
-                </button>
-              )}
+              <button onClick={() => goToTab("add")}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold
+                  bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition">
+                <FiPlus className="text-sm" /> Nuevo producto
+              </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="mt-6">
-              <div className="grid grid-cols-2 gap-8">
-                <input
-                  name="nombre"
-                  value={form.nombre}
-                  onChange={handleChange}
-                  placeholder="Nombre del producto"
-                  required
-                  className="input-admin"
-                />
-
-                <input
-                  name="precio"
-                  value={form.precio}
-                  onChange={handleChange}
-                  placeholder="Precio Q"
-                  type="number"
-                  required
-                  className="input-admin"
-                />
-
-                <input
-                  name="pesoEnLibras"
-                  value={form.pesoEnLibras}
-                  onChange={handleChange}
-                  placeholder="Peso en libras"
-                  type="number"
-                  step="0.01"
-                  className="input-admin"
-                />
-
-                <input
-                  name="stock"
-                  value={form.stock}
-                  onChange={handleChange}
-                  placeholder="Stock disponible"
-                  type="number"
-                  required
-                  className="input-admin"
-                />
-
-                <select
-                  name="categoriaId"
-                  value={form.categoriaId}
-                  onChange={handleChange}
-                  required
-                  className="input-admin"
-                >
-                  <option value="">Seleccionar categoría</option>
-                  {categories.map((cat) => (
-                    <option key={cat.Id} value={cat.Id}>
-                      {cat.Nombre}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  name="subcategoriaId"
-                  value={form.subcategoriaId}
-                  onChange={handleChange}
-                  disabled={!form.categoriaId}
-                  className="input-admin"
-                >
-                  <option value="">Seleccionar subcategoría</option>
-                  {subcategories.map((sub) => (
-                    <option key={sub.Id} value={sub.Id}>
-                      {sub.Nombre}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  name="marcaId"
-                  value={form.marcaId}
-                  onChange={handleChange}
-                  required
-                  className="input-admin"
-                >
-                  <option value="">Seleccionar marca</option>
-                  {brands.map((brand) => (
-                    <option key={brand.Id} value={brand.Id}>
-                      {brand.Nombre}
-                    </option>
-                  ))}
-                </select>
-
-                <input
-                  type="file"
-                  name="imagen"
-                  accept="image/*"
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      imagen: e.target.files[0],
-                    })
-                  }
-                  className="input-admin"
-                />
-
-                <textarea
-                  name="descripcion"
-                  value={form.descripcion}
-                  onChange={handleChange}
-                  placeholder="Descripción del producto"
-                  required
-                  className="input-admin col-span-2 h-40 resize-none"
-                />
-              </div>
-
-              <div className="flex items-center justify-between mt-10">
-                <label className="flex items-center gap-3 font-semibold text-slate-700">
-                  <input
-                    type="checkbox"
-                    name="activo"
-                    checked={form.activo}
-                    onChange={handleChange}
-                    className="w-5 h-5 accent-blue-600"
-                  />
-                  Producto activo
-                </label>
-
-                <button
-                  disabled={loading}
-                  className={`
-                    ${
-                      editingId
-                        ? "bg-yellow-500 hover:bg-yellow-600 shadow-yellow-200"
-                        : "bg-blue-600 hover:bg-blue-700 shadow-blue-200"
-                    }
-                    disabled:opacity-60
-                    transition-all
-                    duration-300
-                    text-white
-                    font-bold
-                    px-10
-                    py-4
-                    rounded-2xl
-                    shadow-lg
-                  `}
-                >
-                  {loading
-                    ? "Guardando..."
-                    : editingId
-                    ? "Guardar Cambios"
-                    : "Guardar Producto"}
-                </button>
-              </div>
-            </form>
+            <StockTable
+              products={filteredProducts}
+              onEdit={editProduct}
+              onDelete={deleteProduct}
+              loading={loading}
+            />
           </section>
+        )}
+
+        {/* Formulario */}
+        {activeTab === "add" && (
+          <form onSubmit={handleSubmit}>
+            <ProductForm
+              form={form}
+              handleChange={handleChange}
+              setForm={setForm}
+              categories={categories}
+              subcategories={subcategories}
+              brands={brands}
+              editingId={editingId}
+              loading={loading}
+              onCancel={cancelEdit}
+            />
+          </form>
         )}
       </main>
     </div>

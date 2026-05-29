@@ -1,132 +1,72 @@
 import { NavLink } from "react-router-dom"
-
 import {
-  FiGrid,
-  FiBox,
-  FiFolder,
-  FiTag,
-  FiCalendar,
-  FiUsers,
-  FiSettings,
-  FiLogOut,
-  FiShoppingBag,
-  FiDollarSign,
+  FiGrid, FiBox, FiFolder, FiTag, FiCalendar,
+  FiUsers, FiSettings, FiLogOut, FiShoppingBag, FiDollarSign,
 } from "react-icons/fi"
 
-// Menú principal del Dashboard Admin
 const menu = [
-  {
-    name: "Dashboard",
-    path: "/",
-    icon: <FiGrid />,
-  },
-  {
-    name: "Productos",
-    path: "/productos",
-    icon: <FiBox />,
-  },
-  {
-    name: "Categorías",
-    path: "/categorias",
-    icon: <FiFolder />,
-  },
-  {
-    name: "Marcas",
-    path: "/marcas",
-    icon: <FiTag />,
-  },
-  {
-    name: "Pedidos",
-    path: "/pedidos",
-    icon: <FiCalendar />,
-  },
-
-  // Nueva sección para ventas
-  {
-    name: "Ventas",
-    path: "/ventas",
-    icon: <FiDollarSign />,
-  },
-
-  {
-    name: "Usuarios",
-    path: "/usuarios",
-    icon: <FiUsers />,
-  },
-  {
-    name: "Ofertas",
-    path: "/ofertas",
-    icon: <FiTag />,
-  },
-  {
-    name: "Configuración",
-    path: "/configuracion",
-    icon: <FiSettings />,
-  },
+  { name: "Dashboard",    path: "/",             icon: <FiGrid /> },
+  { name: "Productos",    path: "/productos",    icon: <FiBox /> },
+  { name: "Categorías",   path: "/categorias",   icon: <FiFolder /> },
+  { name: "Marcas",       path: "/marcas",       icon: <FiTag /> },
+  { name: "Pedidos",      path: "/pedidos",      icon: <FiCalendar /> },
+  { name: "Ventas",       path: "/ventas",       icon: <FiDollarSign /> },
+  { name: "Usuarios",     path: "/usuarios",     icon: <FiUsers /> },
+  { name: "Ofertas",      path: "/ofertas",      icon: <FiTag /> },
 ]
 
 function Sidebar() {
-  const admin =
-    JSON.parse(localStorage.getItem("admin_user")) || {}
+  const admin = JSON.parse(localStorage.getItem("admin_user")) || {}
 
-  // Cerrar sesión del administrador
   const handleLogout = () => {
     localStorage.removeItem("adminLogged")
     localStorage.removeItem("admin_user")
     localStorage.removeItem("nexora_token")
-
     window.location.href = "/login"
   }
 
   return (
-    <aside className="w-[280px] bg-white min-h-screen px-5 py-8 border-r border-slate-100 flex flex-col justify-between">
+    <aside className="w-[260px] bg-white sticky top-0 h-screen overflow-y-auto flex-shrink-0
+      px-4 py-7 border-r border-slate-100 flex flex-col justify-between">
+
       <div>
         {/* Logo */}
-        <div className="flex items-center gap-3 text-blue-600 mb-12">
-          <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center">
-            <FiShoppingBag className="text-3xl" />
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0">
+            <FiShoppingBag className="text-xl" />
           </div>
-
           <div>
-            <h1 className="text-4xl font-black">
-              Nexora
-            </h1>
-
-            <p className="text-slate-400 text-sm">
-              Admin Dashboard
-            </p>
+            <h1 className="text-xl font-bold text-blue-600 leading-none">Nexora</h1>
+            <p className="text-xs text-slate-400 mt-0.5">Admin Dashboard</p>
           </div>
         </div>
 
-        {/* Información del admin logueado */}
-        <div className="bg-slate-50 rounded-2xl p-4 mb-8 border border-slate-100">
-          <h2 className="font-bold text-slate-900 text-lg">
+        {/* Info admin */}
+        <div className="bg-slate-50 rounded-xl px-4 py-3 mb-6 border border-slate-100">
+          <p className="text-sm font-semibold text-slate-800 truncate">
             {admin.name || "Admin"}
-          </h2>
-
-          <p className="text-slate-500 text-sm">
+          </p>
+          <p className="text-xs text-slate-400 truncate">
             {admin.role || "Administrador"}
           </p>
         </div>
 
         {/* Menú */}
-        <nav className="space-y-4">
+        <nav className="space-y-1">
           {menu.map((item) => (
             <NavLink
               key={item.name}
               to={item.path}
+              end={item.path === "/"}
               className={({ isActive }) =>
-                `flex items-center gap-4 px-5 py-4 rounded-2xl text-lg transition-all duration-300 ${
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                   isActive
-                    ? "bg-blue-600 text-white shadow-lg shadow-blue-200"
-                    : "text-slate-900 hover:bg-slate-100"
+                    ? "bg-blue-600 text-white"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 }`
               }
             >
-              <span className="text-2xl">
-                {item.icon}
-              </span>
-
+              <span className="text-base flex-shrink-0">{item.icon}</span>
               {item.name}
             </NavLink>
           ))}
@@ -136,9 +76,10 @@ function Sidebar() {
       {/* Logout */}
       <button
         onClick={handleLogout}
-        className="flex items-center gap-4 text-red-500 font-semibold px-5 py-4 hover:bg-red-50 rounded-2xl transition"
+        className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-500
+          hover:bg-red-50 rounded-xl transition w-full"
       >
-        <FiLogOut className="text-2xl" />
+        <FiLogOut className="text-base flex-shrink-0" />
         Cerrar sesión
       </button>
     </aside>
